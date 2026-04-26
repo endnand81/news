@@ -11,141 +11,125 @@
 <meta name="twitter:title" content="데일리 브리핑">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
 html, body {
-  width: 100%; height: 100%;
-  background: #080808;
-  overflow: hidden;
-  user-select: none;
-  font-family: 'Malgun Gothic', sans-serif;
+  width:100%; height:100%;
+  background:#080808;
+  overflow:hidden;
+  user-select:none;
+  font-family:'Malgun Gothic',sans-serif;
 }
-
 #header {
-  position: relative;
-  z-index: 9999;
-  height: 52px;
-  background: #111;
-  border-bottom: 1px solid #7a6125;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
+  position:relative; z-index:9999;
+  height:52px; background:#111;
+  border-bottom:1px solid #7a6125;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 18px;
 }
-.logo {
-  color: #b8943a;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-.logo-icon { margin-right: 6px; }
-.hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-#currentLabel { color: #b8943a; font-size: 12px; font-weight: 700; }
-#pageCounter  { color: #555; font-size: 10px; }
+.logo { color:#b8943a; font-size:15px; font-weight:700; letter-spacing:2px; }
+.hdr-right { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+#currentLabel { color:#b8943a; font-size:12px; font-weight:700; }
+#pageCounter  { color:#555; font-size:10px; }
 
 #scene {
-  position: relative;
-  width: 100%;
-  background: #080808;
-  overflow: hidden;
-  perspective: 900px;
-  perspective-origin: 82% center;
+  position:relative;
+  width:100%; background:#080808;
+  overflow:hidden;
+  /*
+   * 왼쪽 척추(spine)에서 바라보는 시점
+   * 오른쪽 모서리가 들려서 왼쪽으로 넘어가는 연출
+   */
+  perspective:700px;
+  perspective-origin:20% center;
 }
 
+/* 페이지: 왼쪽 끝이 고정축 → 오른쪽 모서리가 앞으로 들렸다가 왼쪽으로 넘어감 */
 .page-wrap {
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  transform-origin: right center;
-  transform-style: preserve-3d;
-  will-change: transform;
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  transform-origin:left center;
+  transform-style:preserve-3d;
+  will-change:transform;
 }
 .page-wrap.animate {
-  transition: transform 0.65s cubic-bezier(0.645, 0.045, 0.355, 1.0);
+  transition:transform 0.65s cubic-bezier(0.645,0.045,0.355,1.0);
 }
-.page-wrap.flipped { transform: rotateY(180deg); }
+.page-wrap.flipped { transform:rotateY(-180deg); }
 
 .face {
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  overflow:hidden;
+  display:flex; justify-content:center; align-items:center;
 }
 .face.front img {
-  height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-  display: block;
+  height:100%; max-width:100%;
+  object-fit:contain; display:block;
 }
+/* 뒷면 */
 .face.back {
-  transform: rotateY(-180deg);
-  background: #0d0d0d;
+  transform:rotateY(180deg);
+  background:#0e0d0b;
 }
 
+/* 줌 컨테이너 */
 .zoom-target {
-  width: 100%; height: 100%;
-  display: flex; justify-content: center; align-items: center;
-  transform-origin: center;
-  will-change: transform;
-  transition: transform 0.2s ease-out;
+  width:100%; height:100%;
+  display:flex; justify-content:center; align-items:center;
+  transform-origin:center; will-change:transform;
+  transition:transform 0.2s ease-out;
 }
-.zoom-target.no-anim { transition: none; }
+.zoom-target.no-anim { transition:none; }
 
+/*
+ * 접힘 그림자: 오른쪽(넘어가는 모서리)이 어둡고 왼쪽(척추)으로 갈수록 밝아짐
+ * opacity는 JS에서 sin(angle) 로 제어
+ */
 .fold-shade {
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(to left, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 35%, transparent 65%);
-  z-index: 5;
+  position:absolute;
+  top:0; right:0; bottom:0; left:0;
+  pointer-events:none; opacity:0;
+  background:linear-gradient(to right,
+    transparent 30%,
+    rgba(0,0,0,0.25) 65%,
+    rgba(0,0,0,0.7) 100%
+  );
+  z-index:5;
 }
 
 #footer {
-  position: relative;
-  z-index: 9999;
-  height: 46px;
-  background: #111;
-  border-top: 1px solid #222;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  position:relative; z-index:9999;
+  height:46px; background:#111;
+  border-top:1px solid #222;
+  display:flex; align-items:center; justify-content:center; gap:10px;
 }
 .dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #2a2a2a;
-  border: 1px solid #333;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.3s;
+  width:7px; height:7px; border-radius:50%;
+  background:#2a2a2a; border:1px solid #333;
+  cursor:pointer; transition:background 0.3s, transform 0.3s;
 }
-.dot.active { background: #b8943a; border-color: #b8943a; transform: scale(1.5); }
+.dot.active { background:#b8943a; border-color:#b8943a; transform:scale(1.5); }
 
 #tagline {
-  position: absolute;
-  bottom: 10px; left: 50%;
-  transform: translateX(-50%);
-  color: rgba(184,148,58,0.2);
-  font-size: 9px; letter-spacing: 2px;
-  white-space: nowrap; pointer-events: none;
-  z-index: 9999;
+  position:absolute; bottom:10px; left:50%;
+  transform:translateX(-50%);
+  color:rgba(184,148,58,0.2); font-size:9px; letter-spacing:2px;
+  white-space:nowrap; pointer-events:none; z-index:9999;
 }
 
 #loading {
-  position: fixed;
-  top: 0; right: 0; bottom: 0; left: 0;
-  background: #080808;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 16px; z-index: 99999;
-  transition: opacity 0.5s;
+  position:fixed;
+  top:0; right:0; bottom:0; left:0;
+  background:#080808;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px; z-index:99999; transition:opacity 0.5s;
 }
-.load-logo { color: #b8943a; font-size: 20px; font-weight: 700; letter-spacing: 3px; }
-.load-bar-wrap { width: 160px; height: 2px; background: #222; }
-.load-bar { height: 100%; background: #b8943a; width: 0%; transition: width 0.3s; }
-.load-text { color: #555; font-size: 11px; letter-spacing: 1px; }
+.load-logo { color:#b8943a; font-size:20px; font-weight:700; letter-spacing:3px; }
+.load-bar-wrap { width:160px; height:2px; background:#222; }
+.load-bar { height:100%; background:#b8943a; width:0%; transition:width 0.3s; }
+.load-text { color:#555; font-size:11px; letter-spacing:1px; }
 </style>
 </head>
 <body style="background:#080808;">
@@ -157,7 +141,7 @@ html, body {
 </div>
 
 <div id="header">
-  <div class="logo"><span class="logo-icon">&#9671;</span>데일리 브리핑</div>
+  <div class="logo">&#9671; 데일리 브리핑</div>
   <div class="hdr-right">
     <span id="currentLabel">국내 뉴스</span>
     <span id="pageCounter">1 / 6</span>
@@ -170,14 +154,13 @@ html, body {
 
 <script>
 var PAGES = [
-  { src: '01.png', label: '국내 뉴스' },
-  { src: '02.png', label: '글로벌 브리핑' },
-  { src: '03.png', label: '부동산 리포트' },
-  { src: '04.png', label: 'AI 브리핑' },
-  { src: '05.png', label: '스포츠 브리핑' },
-  { src: '06.png', label: '문화·날씨' }
+  { src:'01.png', label:'국내 뉴스' },
+  { src:'02.png', label:'글로벌 브리핑' },
+  { src:'03.png', label:'부동산 리포트' },
+  { src:'04.png', label:'AI 브리핑' },
+  { src:'05.png', label:'스포츠 브리핑' },
+  { src:'06.png', label:'문화·날씨' }
 ];
-
 var N = PAGES.length;
 var current = 0;
 var isAnimating = false;
@@ -191,14 +174,13 @@ var loadBar = document.getElementById('loadBar');
 var loadTxt = document.getElementById('loadText');
 var loading = document.getElementById('loading');
 
-// Height: total - header - footer
 function setSceneHeight() {
   scene.style.height = (window.innerHeight - 52 - 46) + 'px';
 }
 setSceneHeight();
 window.addEventListener('resize', setSceneHeight);
 
-// Build pages
+// Build DOM
 var pageEls = [];
 for (var i = 0; i < N; i++) {
   var wrap = document.createElement('div');
@@ -206,15 +188,11 @@ for (var i = 0; i < N; i++) {
 
   var front = document.createElement('div');
   front.className = 'face front';
-
   var zt = document.createElement('div');
   zt.className = 'zoom-target';
-
   var img = document.createElement('img');
-  img.src = PAGES[i].src;
-  img.alt = PAGES[i].label;
-  zt.appendChild(img);
-  front.appendChild(zt);
+  img.src = PAGES[i].src; img.alt = PAGES[i].label;
+  zt.appendChild(img); front.appendChild(zt);
 
   var shade = document.createElement('div');
   shade.className = 'fold-shade';
@@ -229,7 +207,6 @@ for (var i = 0; i < N; i++) {
   pageEls.push(wrap);
 }
 
-// Build dots
 for (var j = 0; j < N; j++) {
   (function(idx) {
     var d = document.createElement('span');
@@ -259,12 +236,13 @@ function updateUI() {
     dots[i].classList.toggle('active', i === current);
   }
   labelEl.textContent = PAGES[current].label;
-  cntEl.textContent   = (current + 1) + ' / ' + N;
+  cntEl.textContent = (current + 1) + ' / ' + N;
 }
 
-function setShade(pg, angle) {
+// 접힘 그림자: angle은 절댓값 0~180
+function setShade(pg, absAngle) {
   var s = pg.querySelector('.fold-shade');
-  if (s) s.style.opacity = Math.sin(angle * Math.PI / 180) * 0.8;
+  if (s) s.style.opacity = Math.sin(absAngle * Math.PI / 180) * 0.85;
 }
 function clearShade(pg) {
   if (!pg) return;
@@ -272,6 +250,7 @@ function clearShade(pg) {
   if (s) s.style.opacity = 0;
 }
 
+// 프로그래매틱 플립
 function flipNext(fromAngle) {
   if (current >= N - 1 || isAnimating) return;
   isAnimating = true;
@@ -281,7 +260,7 @@ function flipNext(fromAngle) {
   pg.style.transform = 'rotateY(' + (fromAngle !== undefined ? fromAngle : 0) + 'deg)';
   setTimeout(function() {
     pg.classList.add('animate');
-    pg.style.transform = 'rotateY(180deg)';
+    pg.style.transform = 'rotateY(-180deg)';
     setShade(pg, 90);
   }, 20);
   current++; updateUI();
@@ -302,7 +281,7 @@ function flipPrev(fromAngle) {
   updateZIndices(current);
   pg.classList.remove('animate');
   pg.classList.add('flipped');
-  pg.style.transform = 'rotateY(' + (fromAngle !== undefined ? fromAngle : 180) + 'deg)';
+  pg.style.transform = 'rotateY(' + (fromAngle !== undefined ? fromAngle : -180) + 'deg)';
   setTimeout(function() {
     pg.classList.add('animate');
     pg.style.transform = 'rotateY(0deg)';
@@ -326,8 +305,7 @@ function goTo(target) {
   var done = 0;
   var iv = setInterval(function() {
     if (done >= diff) { clearInterval(iv); return; }
-    dir > 0 ? flipNext() : flipPrev();
-    done++;
+    dir > 0 ? flipNext() : flipPrev(); done++;
   }, 320);
 }
 
@@ -336,13 +314,13 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   flipPrev();
 });
 
-// Zoom + drag
-var zScale = 1, zX = 0, zY = 0;
-var isPinching = false, pStartD = 0, pStartS = 1;
-var panX = 0, panY = 0, panZX = 0, panZY = 0;
-var lastTap = 0;
-var isDragging = false, dragDir = 0, dragPage = null;
-var startX = 0, startY = 0;
+// 핀치줌 + 드래그 플립
+var zScale=1, zX=0, zY=0;
+var isPinching=false, pStartD=0, pStartS=1;
+var panX=0, panY=0, panZX=0, panZY=0;
+var lastTap=0;
+var isDragging=false, dragDir=0, dragPage=null;
+var startX=0, startY=0;
 
 function SW() { return scene.offsetWidth; }
 
@@ -355,148 +333,157 @@ function applyZoom(anim) {
   if (anim) { el.classList.remove('no-anim'); } else { el.classList.add('no-anim'); }
   el.style.transform = 'translate(' + zX + 'px,' + zY + 'px) scale(' + zScale + ')';
 }
-function resetZoom(anim) { zScale = 1; zX = 0; zY = 0; applyZoom(anim); }
+function resetZoom(anim) { zScale=1; zX=0; zY=0; applyZoom(anim); }
 function clampPan() {
-  var mx = Math.max(0, (zScale - 1) * scene.offsetWidth  / 2);
-  var my = Math.max(0, (zScale - 1) * scene.offsetHeight / 2);
-  zX = Math.max(-mx, Math.min(mx, zX));
-  zY = Math.max(-my, Math.min(my, zY));
+  var mx = Math.max(0,(zScale-1)*scene.offsetWidth/2);
+  var my = Math.max(0,(zScale-1)*scene.offsetHeight/2);
+  zX = Math.max(-mx,Math.min(mx,zX));
+  zY = Math.max(-my,Math.min(my,zY));
 }
 function pd(t) {
   return Math.sqrt(
-    Math.pow(t[1].clientX - t[0].clientX, 2) +
-    Math.pow(t[1].clientY - t[0].clientY, 2)
+    Math.pow(t[1].clientX-t[0].clientX,2) +
+    Math.pow(t[1].clientY-t[0].clientY,2)
   );
 }
 
 function settleDrag(commit) {
   if (!dragPage) return;
   isAnimating = true;
-  var endAngle = commit ? (dragDir === 1 ? 180 : 0) : (dragDir === 1 ? 0 : 180);
+  // next: 0→-180 / prev: -180→0
+  var endAngle = commit
+    ? (dragDir===1 ? -180 : 0)
+    : (dragDir===1 ?    0 : -180);
   dragPage.classList.add('animate');
   dragPage.style.transform = 'rotateY(' + endAngle + 'deg)';
   setShade(dragPage, 30);
   if (commit) {
-    if (dragDir === 1) { current++; } else { current--; }
+    if (dragDir===1) { current++; } else { current--; }
     updateUI();
   }
-  var _pg = dragPage, _d = dragDir;
-  isDragging = false; dragDir = 0; dragPage = null;
+  var _pg=dragPage, _d=dragDir;
+  isDragging=false; dragDir=0; dragPage=null;
   setTimeout(function() {
     if (commit) {
-      if (_d === 1) { _pg.classList.add('flipped'); } else { _pg.classList.remove('flipped'); }
+      if (_d===1) { _pg.classList.add('flipped'); }
+      else        { _pg.classList.remove('flipped'); }
     }
-    _pg.style.transform = '';
+    _pg.style.transform='';
     clearShade(_pg);
     updateZIndices();
-    isAnimating = false;
+    isAnimating=false;
   }, 700);
 }
 
 scene.addEventListener('touchstart', function(e) {
   if (e.touches.length === 2) {
-    isPinching = true;
-    pStartD = pd(e.touches); pStartS = zScale;
+    isPinching=true; pStartD=pd(e.touches); pStartS=zScale;
     if (isDragging) settleDrag(false);
     e.preventDefault();
-  } else if (e.touches.length === 1 && !isAnimating) {
+  } else if (e.touches.length===1 && !isAnimating) {
     var t = e.touches[0];
-    startX = panX = t.clientX;
-    startY = panY = t.clientY;
-    panZX = zX; panZY = zY;
-    isDragging = false; dragDir = 0; dragPage = null;
+    startX=panX=t.clientX; startY=panY=t.clientY;
+    panZX=zX; panZY=zY;
+    isDragging=false; dragDir=0; dragPage=null;
     var now = Date.now();
     if (now - lastTap < 280) {
-      if (zScale > 1) { resetZoom(true); } else { zScale = 2.8; applyZoom(true); }
-      lastTap = 0; e.preventDefault();
-    } else { lastTap = now; }
+      if (zScale>1) { resetZoom(true); } else { zScale=2.8; applyZoom(true); }
+      lastTap=0; e.preventDefault();
+    } else { lastTap=now; }
   }
-}, { passive: false });
+}, { passive:false });
 
 scene.addEventListener('touchmove', function(e) {
-  if (e.touches.length === 2 && isPinching) {
-    zScale = Math.max(1, Math.min(5, pStartS * pd(e.touches) / pStartD));
-    if (zScale <= 1.01) { zX = 0; zY = 0; }
+  if (e.touches.length===2 && isPinching) {
+    zScale = Math.max(1, Math.min(5, pStartS*pd(e.touches)/pStartD));
+    if (zScale<=1.01) { zX=0; zY=0; }
     applyZoom(false); e.preventDefault(); return;
   }
-  if (e.touches.length !== 1 || isAnimating) return;
+  if (e.touches.length!==1 || isAnimating) return;
   var dx = e.touches[0].clientX - startX;
   var dy = e.touches[0].clientY - startY;
-  if (zScale > 1) {
+
+  if (zScale>1) {
     zX = panZX + (e.touches[0].clientX - panX);
     zY = panZY + (e.touches[0].clientY - panY);
     clampPan(); applyZoom(false); e.preventDefault(); return;
   }
+
   if (!isDragging) {
-    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-      if (dx < 0 && current < N - 1) {
-        dragDir = 1; dragPage = pageEls[current];
-        dragPage.classList.remove('animate', 'flipped');
-        dragPage.style.transform = 'rotateY(0deg)';
-        dragPage.style.zIndex = N * 4;
-        isDragging = true;
-      } else if (dx > 0 && current > 0) {
-        dragDir = -1; dragPage = pageEls[current - 1];
+    if (Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)*1.2) {
+      if (dx<0 && current<N-1) {
+        // 다음: 현재 페이지 오른쪽 모서리가 앞으로 들렸다가 왼쪽으로 넘어감
+        dragDir=1; dragPage=pageEls[current];
+        dragPage.classList.remove('animate','flipped');
+        dragPage.style.transform='rotateY(0deg)';
+        dragPage.style.zIndex=N*4;
+        isDragging=true;
+      } else if (dx>0 && current>0) {
+        // 이전: 왼쪽에 넘어가 있던 페이지가 다시 돌아옴
+        dragDir=-1; dragPage=pageEls[current-1];
         dragPage.classList.remove('animate');
         dragPage.classList.add('flipped');
-        dragPage.style.transform = 'rotateY(180deg)';
-        dragPage.style.zIndex = N * 4;
-        isDragging = true;
+        dragPage.style.transform='rotateY(-180deg)';
+        dragPage.style.zIndex=N*4;
+        isDragging=true;
       }
     }
     return;
   }
+
   var TRAVEL = SW() * 0.60;
   var angle;
-  if (dragDir === 1) {
-    angle = Math.max(0, Math.min(180, (-dx / TRAVEL) * 180));
+  if (dragDir===1) {
+    // 왼쪽 드래그 → 0 에서 -180 으로
+    angle = Math.max(-180, Math.min(0, (dx/TRAVEL)*180));
   } else {
-    angle = Math.max(0, Math.min(180, 180 - (dx / TRAVEL) * 180));
+    // 오른쪽 드래그 → -180 에서 0 으로
+    angle = Math.max(-180, Math.min(0, -180+(dx/TRAVEL)*180));
   }
   dragPage.style.transform = 'rotateY(' + angle + 'deg)';
-  setShade(dragPage, angle);
+  setShade(dragPage, Math.abs(angle));
   e.preventDefault();
-}, { passive: false });
+}, { passive:false });
 
 scene.addEventListener('touchend', function(e) {
   if (isPinching) {
-    isPinching = false;
-    if (zScale < 1.08) { resetZoom(true); } else { clampPan(); applyZoom(true); }
+    isPinching=false;
+    if (zScale<1.08) { resetZoom(true); } else { clampPan(); applyZoom(true); }
     return;
   }
   if (isDragging && dragPage) {
     var dx = e.changedTouches[0].clientX - startX;
-    settleDrag(Math.abs(dx) > SW() * 0.27);
+    settleDrag(Math.abs(dx) > SW()*0.27);
     return;
   }
-  if (zScale <= 1 && !isAnimating) {
+  if (zScale<=1 && !isAnimating) {
     var ddx = e.changedTouches[0].clientX - startX;
     var ddy = e.changedTouches[0].clientY - startY;
-    if (Math.abs(ddx) < 10 && Math.abs(ddy) < 10) {
-      if (e.changedTouches[0].clientX > SW() / 2) { flipNext(); } else { flipPrev(); }
+    if (Math.abs(ddx)<10 && Math.abs(ddy)<10) {
+      if (e.changedTouches[0].clientX > SW()/2) { flipNext(); } else { flipPrev(); }
     }
   }
-}, { passive: true });
+}, { passive:true });
 
-// Loading
-var loaded = 0;
-for (var k = 0; k < N; k++) {
+// 로딩
+var loaded=0;
+for (var k=0; k<N; k++) {
   (function(wrap) {
     var img = wrap.querySelector('img');
     function done() {
       loaded++;
-      loadBar.style.width = Math.round(loaded / N * 100) + '%';
-      loadTxt.textContent = loaded + ' / ' + N + ' 로드 완료';
-      if (loaded === N) {
+      loadBar.style.width = Math.round(loaded/N*100)+'%';
+      loadTxt.textContent = loaded+' / '+N+' 로드 완료';
+      if (loaded===N) {
         setTimeout(function() {
-          loading.style.opacity = '0';
+          loading.style.opacity='0';
           setTimeout(function() {
             if (loading.parentNode) loading.parentNode.removeChild(loading);
           }, 500);
         }, 200);
       }
     }
-    if (img.complete) { done(); } else { img.onload = done; img.onerror = done; }
+    if (img.complete) { done(); } else { img.onload=done; img.onerror=done; }
   })(pageEls[k]);
 }
 
