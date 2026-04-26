@@ -2,126 +2,551 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>뉴스 브리핑</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>경제갈량 뉴스 브리핑</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
+:root {
+  --gold: #b8943a;
+  --gold-dim: #7a6125;
+  --dark: #080808;
+  --panel: #111111;
+  --border: #222;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
 body {
-    margin: 0;
-    background: #111;
-    font-family: sans-serif;
+  background: var(--dark);
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', 'Malgun Gothic', serif;
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  user-select: none;
 }
 
-/* 상단 제목 (고정) */
-.header {
-    position: sticky;
-    top: 0;
-    background: black;
-    color: white;
-    text-align: center;
-    padding: 15px;
-    font-size: 20px;
-    z-index: 10;
+/* ─── HEADER ─────────────────────────── */
+#header {
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--gold-dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  position: relative;
+  z-index: 9999;
 }
 
-/* 전체 컨테이너 */
-.container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 10px;
+.logo {
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* 신문 페이지 */
-.page {
-    background: white;
-    margin-bottom: 20px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+.logo::before {
+  content: '⟡';
+  color: var(--gold);
+  font-size: 14px;
 }
 
-/* 이미지 */
-.page img {
-    width: 100%;
-    display: block;
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+#currentLabel {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+#pageCounter {
+  color: #555;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+/* ─── SCENE ──────────────────────────── */
+#scene {
+  width: 100%;
+  height: calc(100dvh - 52px - 46px);
+  perspective: 2400px;
+  perspective-origin: center center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fold shadow overlay applied to scene during flip */
+#scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+  background: linear-gradient(
+    to right,
+    rgba(0,0,0,0.55) 0%,
+    transparent 30%
+  );
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+
+#scene.flipping::after {
+  opacity: 1;
+}
+
+/* ─── PAGE WRAP ──────────────────────── */
+.page-wrap {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  will-change: transform;
+  cursor: pointer;
+}
+
+.page-wrap.animate {
+  transition: transform 0.72s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.page-wrap.flipped {
+  transform: rotateY(-180deg);
+}
+
+/* ─── PAGE FACES ─────────────────────── */
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.face.front img {
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Back face = dark paper texture */
+.face.back {
+  transform: rotateY(180deg);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(184,148,58,0.04) 28px,
+      rgba(184,148,58,0.04) 29px
+    ),
+    linear-gradient(135deg, #0d0d0d 0%, #161410 50%, #0d0d0d 100%);
+}
+
+.face.back::after {
+  content: '경제갈량';
+  position: absolute;
+  color: rgba(184,148,58,0.08);
+  font-size: clamp(40px, 12vw, 100px);
+  font-weight: 700;
+  letter-spacing: 6px;
+  transform: rotate(-30deg);
+  pointer-events: none;
+}
+
+/* Spine shadow on front face */
+.face.front::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.5), transparent);
+  pointer-events: none;
+}
+
+/* ─── NAV BUTTONS ────────────────────── */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(8,8,8,0.75);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  line-height: 1;
+}
+
+.nav-btn:active { transform: translateY(-50%) scale(0.9); }
+.nav-btn:hover { background: rgba(184,148,58,0.15); border-color: var(--gold); }
+
+#btnPrev { left: 10px; }
+#btnNext { right: 10px; }
+
+.nav-btn.disabled { opacity: 0.2; pointer-events: none; }
+
+/* ─── FOOTER ─────────────────────────── */
+#footer {
+  height: 46px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  z-index: 9999;
+}
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s, border-color 0.3s;
+}
+
+.dot.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  transform: scale(1.5);
+}
+
+/* ─── TAGLINE ────────────────────────── */
+#tagline {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(184,148,58,0.25);
+  font-size: 9px;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ─── LOADING ────────────────────────── */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: var(--dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 99999;
+  transition: opacity 0.5s;
+}
+
+.load-logo {
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.load-bar-wrap {
+  width: 160px;
+  height: 2px;
+  background: #222;
+}
+
+.load-bar {
+  height: 100%;
+  background: var(--gold);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.load-text {
+  color: #555;
+  font-size: 11px;
+  letter-spacing: 2px;
 }
 </style>
 </head>
-
 <body>
 
-<div class="header">뉴스 브리핑</div>
-
-<div class="container">
-
-    <div class="page">
-        <img src="/news/01.png" alt="page1">
-    </div>
-
-    <div class="page">
-        <img src="/news/02.png" alt="page2">
-    </div>
-
-    <div class="page">
-        <img src="/news/03.png" alt="page3">
-    </div>
-
-    <div class="page">
-        <img src="/news/04.png" alt="page4">
-    </div>
-
-    <div class="page">
-        <img src="/news/05.png" alt="page5">
-    </div>
-
-    <div class="page">
-        <img src="/news/06.png" alt="page6">
-    </div>
-
+<!-- Loading Screen -->
+<div id="loading">
+  <div class="load-logo">⟡ 데일리 브리핑</div>
+  <div class="load-bar-wrap">
+    <div class="load-bar" id="loadBar"></div>
+  </div>
+  <div class="load-text" id="loadText">뉴스 로딩 중...</div>
 </div>
 
-</body>
-</html>
-
-
-
-  <div class="btn prev" onclick="prevSlide()">❮</div>
-  <div class="btn next" onclick="nextSlide()">❯</div>
-
+<!-- Header -->
+<div id="header">
+  <div class="logo">데일리 브리핑</div>
+  <div class="header-right">
+    <span id="currentLabel">국내 뉴스</span>
+    <span id="pageCounter">1 / 6</span>
+  </div>
 </div>
+
+<!-- Scene -->
+<div id="scene">
+  <div id="book"></div>
+  <button class="nav-btn" id="btnPrev" aria-label="이전">&#8249;</button>
+  <button class="nav-btn" id="btnNext" aria-label="다음">&#8250;</button>
+</div>
+
+<!-- Footer -->
+<div id="footer">
+  <div id="dots"></div>
+</div>
+
+<div id="tagline">이게 누구한테 이득이지? — 경제갈량</div>
 
 <script>
-let index = 0;
-const slides = document.querySelectorAll(".slide");
+// ─────────────────────────────────────────
+//  CONFIG — 이미지 파일명과 라벨만 수정하면 됨
+// ─────────────────────────────────────────
+const PAGES = [
+  { src: '01.png', label: '국내 뉴스' },
+  { src: '02.png', label: '글로벌 브리핑' },
+  { src: '03.png', label: '부동산 리포트' },
+  { src: '04.png', label: 'AI 브리핑' },
+  { src: '05.png', label: '스포츠 브리핑' },
+  { src: '06.png', label: '문화·날씨' },
+];
 
-function showSlide(i){
-  slides.forEach(s => s.classList.remove("active"));
-  slides[i].classList.add("active");
-}
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+let current = 0;
+let isAnimating = false;
+const book    = document.getElementById('book');
+const scene   = document.getElementById('scene');
+const dotsEl  = document.getElementById('dots');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+const labelEl = document.getElementById('currentLabel');
+const counterEl = document.getElementById('pageCounter');
 
-function nextSlide(){
-  index = (index + 1) % slides.length;
-  showSlide(index);
-}
+// ─────────────────────────────────────────
+//  BUILD DOM
+// ─────────────────────────────────────────
+const pageEls = PAGES.map((p, i) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'page-wrap';
 
-function prevSlide(){
-  index = (index - 1 + slides.length) % slides.length;
-  showSlide(index);
-}
-</script>
+  // Front
+  const front = document.createElement('div');
+  front.className = 'face front';
+  const img = document.createElement('img');
+  img.src  = p.src;
+  img.alt  = p.label;
+  front.appendChild(img);
 
-</body>
-</html>    startX = e.touches[0].clientX;
+  // Back
+  const back = document.createElement('div');
+  back.className = 'face back';
+
+  wrap.appendChild(front);
+  wrap.appendChild(back);
+  book.appendChild(wrap);
+  return wrap;
 });
 
-slider.addEventListener("touchend", e => {
-    let endX = e.changedTouches[0].clientX;
-
-    if (startX - endX > 50) next();
-    else if (endX - startX > 50) prev();
+PAGES.forEach((p, i) => {
+  const dot = document.createElement('span');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.title = p.label;
+  dot.onclick = () => goTo(i);
+  dotsEl.appendChild(dot);
 });
 
-update();
+// ─────────────────────────────────────────
+//  Z-INDEX
+// ─────────────────────────────────────────
+function updateZIndices(activeIdx) {
+  pageEls.forEach((page, i) => {
+    if (activeIdx !== undefined && i === activeIdx) {
+      page.style.zIndex = PAGES.length * 3;
+    } else if (i < current) {
+      // Flipped — behind
+      page.style.zIndex = i;
+    } else {
+      // Unflipped — higher (current page on top among unflipped)
+      page.style.zIndex = PAGES.length * 2 - i;
+    }
+  });
+}
 
+function updateUI() {
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === current));
+  labelEl.textContent  = PAGES[current].label;
+  counterEl.textContent = `${current + 1} / ${PAGES.length}`;
+  btnPrev.classList.toggle('disabled', current === 0);
+  btnNext.classList.toggle('disabled', current === PAGES.length - 1);
+}
+
+// ─────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────
+function next() {
+  if (current >= PAGES.length - 1 || isAnimating) return;
+  isAnimating = true;
+  scene.classList.add('flipping');
+
+  const page = pageEls[current];
+  updateZIndices(current);
+
+  // Trigger reflow then add transition + flipped
+  page.classList.remove('animate');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      page.classList.add('animate');
+      page.classList.add('flipped');
+    });
+  });
+
+  current++;
+  updateUI();
+
+  setTimeout(() => {
+    updateZIndices();
+    isAnimating = false;
+    scene.classList.remove('flipping');
+  }, 750);
+}
+
+function prev() {
+  if (current <= 0 || isAnimating) return;
+  isAnimating = true;
+
+  current--;
+  const page = pageEls[current];
+  updateZIndices(current);
+
+  page.classList.remove('animate');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      page.classList.add('animate');
+      page.classList.remove('flipped');
+    });
+  });
+
+  updateUI();
+
+  setTimeout(() => {
+    updateZIndices();
+    isAnimating = false;
+  }, 750);
+}
+
+function goTo(target) {
+  if (target === current || isAnimating) return;
+
+  const step = () => {
+    if (target > current) next();
+    else if (target < current) prev();
+  };
+
+  // Chain flips with delay if jumping more than 1
+  const diff = Math.abs(target - current);
+  if (diff === 1) { step(); return; }
+
+  let steps = 0;
+  const interval = setInterval(() => {
+    if (steps >= diff) { clearInterval(interval); return; }
+    step();
+    steps++;
+  }, 300);
+}
+
+// ─────────────────────────────────────────
+//  EVENTS
+// ─────────────────────────────────────────
+btnPrev.onclick = prev;
+btnNext.onclick = next;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev();
+});
+
+// Touch / swipe
+let touchX = 0, touchY = 0;
+scene.addEventListener('touchstart', e => {
+  touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
+}, { passive: true });
+
+scene.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  const dy = e.changedTouches[0].clientY - touchY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (dx < 0) next();
+    else         prev();
+  }
+}, { passive: true });
+
+// ─────────────────────────────────────────
+//  LOADING
+// ─────────────────────────────────────────
+const loadBar  = document.getElementById('loadBar');
+const loadText = document.getElementById('loadText');
+const loading  = document.getElementById('loading');
+
+let loaded = 0;
+const total = PAGES.length;
+
+function onImageLoad() {
+  loaded++;
+  const pct = Math.round((loaded / total) * 100);
+  loadBar.style.width = pct + '%';
+  loadText.textContent = `${loaded} / ${total} 로드 완료`;
+  if (loaded === total) {
+    setTimeout(() => {
+      loading.style.opacity = '0';
+      setTimeout(() => loading.remove(), 500);
+    }, 300);
+  }
+}
+
+pageEls.forEach(wrap => {
+  const img = wrap.querySelector('img');
+  if (img.complete) {
+    onImageLoad();
+  } else {
+    img.onload  = onImageLoad;
+    img.onerror = onImageLoad; // count errors too so loading never hangs
+  }
+});
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+updateZIndices();
+updateUI();
 </script>
-
 </body>
 </html>
