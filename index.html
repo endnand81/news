@@ -167,6 +167,18 @@ body {
   pointer-events: none;
 }
 
+/* Zoom container inside front face */
+.zoom-target {
+  width: 100%; height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-origin: center center;
+  will-change: transform;
+  transition: transform 0.2s ease-out;
+}
+.zoom-target.no-anim { transition: none; }
+
 /* Spine shadow on front face */
 .face.front::after {
   content: '';
@@ -359,10 +371,13 @@ const pageEls = PAGES.map((p, i) => {
   // Front
   const front = document.createElement('div');
   front.className = 'face front';
+  const zoomTarget = document.createElement('div');
+  zoomTarget.className = 'zoom-target';
   const img = document.createElement('img');
-  img.src  = p.src;
-  img.alt  = p.label;
-  front.appendChild(img);
+  img.src = p.src;
+  img.alt = p.label;
+  zoomTarget.appendChild(img);
+  front.appendChild(zoomTarget);
 
   // Back
   const back = document.createElement('div');
@@ -483,24 +498,101 @@ function goTo(target) {
 }
 
 // ─────────────────────────────────────────
-//  EVENTS
+//  EVENTS (keyboard — buttons handled in zoom section)
 // ─────────────────────────────────────────
-btnPrev.onclick = prev;
-btnNext.onclick = next;
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev();
-});
-
-// Touch / swipe
+// ─────────────────────────────────────────
+//  PINCH ZOOM + PAN + SWIPE
+// ─────────────────────────────────────────
+let zScale = 1, zX = 0, zY = 0;
+let isPinching = false;
+let pinchStartDist = 0, pinchStartScale = 1;
 let touchX = 0, touchY = 0;
+let panStartX = 0, panStartY = 0, panStartZX = 0, panStartZY = 0;
+let lastTapTime = 0;
+
+function getZoomTarget() {
+  return pageEls[current].querySelector('.zoom-target');
+}
+
+function applyZoom(animated) {
+  const el = getZoomTarget();
+  if (!el) return;
+  el.classList.toggle('no-anim', !animated);
+  el.style.transform = `translate(${zX}px, ${zY}px) scale(${zScale})`;
+}
+
+function resetZoom(anim) {
+  zScale = 1; zX = 0; zY = 0;
+  applyZoom(anim);
+}
+
+function clampPan() {
+  const sw = scene.offsetWidth, sh = scene.offsetHeight;
+  const maxX = Math.max(0, (zScale - 1) * sw  / 2);
+  const maxY = Math.max(0, (zScale - 1) * sh / 2);
+  zX = Math.max(-maxX, Math.min(maxX, zX));
+  zY = Math.max(-maxY, Math.min(maxY, zY));
+}
+
+function getPinchDist(t) {
+  return Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
+}
+
+// Reset zoom on page change
+const _next = next, _prev = prev;
+// (wrapped below after definition)
+
 scene.addEventListener('touchstart', e => {
-  touchX = e.touches[0].clientX;
-  touchY = e.touches[0].clientY;
-}, { passive: true });
+  if (e.touches.length === 2) {
+    isPinching = true;
+    pinchStartDist  = getPinchDist(e.touches);
+    pinchStartScale = zScale;
+    e.preventDefault();
+  } else if (e.touches.length === 1) {
+    touchX = panStartX = e.touches[0].clientX;
+    touchY = panStartY = e.touches[0].clientY;
+    panStartZX = zX;
+    panStartZY = zY;
+
+    // Double-tap zoom toggle
+    const now = Date.now();
+    if (now - lastTapTime < 280) {
+      if (zScale > 1) { resetZoom(true); }
+      else { zScale = 2.5; applyZoom(true); }
+      lastTapTime = 0;
+      e.preventDefault();
+    } else {
+      lastTapTime = now;
+    }
+  }
+}, { passive: false });
+
+scene.addEventListener('touchmove', e => {
+  if (e.touches.length === 2 && isPinching) {
+    const dist = getPinchDist(e.touches);
+    zScale = Math.max(1, Math.min(5, pinchStartScale * dist / pinchStartDist));
+    if (zScale <= 1) { zX = 0; zY = 0; }
+    applyZoom(false);
+    e.preventDefault();
+  } else if (e.touches.length === 1 && zScale > 1) {
+    zX = panStartZX + (e.touches[0].clientX - panStartX);
+    zY = panStartZY + (e.touches[0].clientY - panStartY);
+    clampPan();
+    applyZoom(false);
+    e.preventDefault();
+  }
+}, { passive: false });
 
 scene.addEventListener('touchend', e => {
+  if (isPinching) {
+    isPinching = false;
+    if (zScale < 1.08) resetZoom(true);
+    else clampPan(), applyZoom(true);
+    return;
+  }
+  if (zScale > 1) return; // no flip when zoomed
+
   const dx = e.changedTouches[0].clientX - touchX;
   const dy = e.changedTouches[0].clientY - touchY;
   if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
@@ -508,6 +600,18 @@ scene.addEventListener('touchend', e => {
     else         prev();
   }
 }, { passive: true });
+
+// Reset zoom when page changes
+const origNext = next;
+const origPrev = prev;
+function nextWithReset() { resetZoom(false); origNext(); }
+function prevWithReset() { resetZoom(false); origPrev(); }
+btnNext.onclick = nextWithReset;
+btnPrev.onclick = prevWithReset;
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextWithReset();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevWithReset();
+});
 
 // ─────────────────────────────────────────
 //  LOADING
